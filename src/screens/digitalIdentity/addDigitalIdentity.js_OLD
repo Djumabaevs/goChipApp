@@ -1,0 +1,298 @@
+import React, { Component } from 'react';
+import {withApollo} from 'react-apollo';
+import {StyleSheet, ScrollView} from 'react-native';
+import {Text, Container, Item, Button, Form, Label, View, Toast} from 'native-base';
+import MultiSelect from 'react-native-multiple-select';
+import { v4 as uuidv4 } from 'uuid';
+
+
+import SynHeader from '../../components/layout/header';
+import {getAllPets, getAllDevices, getJobTypes, getParameters, getAllLicenses } from '../../apollo/queries';
+import {addJob, addJobParams, addPetDevice} from '../../apollo/mutations';
+
+class AddDigitalIdentityScreen extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            pet_index: undefined,
+            device_index:  undefined,
+            device_city_index: undefined,
+            city_license_index: undefined,
+            pets: [],
+            devicesChips: [],
+            devicesCityChips: [],
+            licenses: [],
+        };
+    }
+
+    componentDidMount(){
+        this._getPets();
+        this._getDevicesChips();
+        this._getDevicesCityChips();
+        this._getLicenses();
+    }
+
+
+    _getPets = async () => {
+        const {data} = await this.props.client.query({
+            query: getAllPets,
+            variables:{
+                orderType: "desc",
+                where: {}
+            },
+            fetchPolicy: "no-cache",
+        });
+        this.setState({pets: data.pets})
+    }
+
+    _getDevicesChips = async () => {
+        const {data} = await this.props.client.query({
+            query: getAllDevices,
+            variables: {
+              where:{
+                  devices_type:{
+                      device_type_name: {_in: ["gochip", "chip"] }
+                  }
+              }
+            },
+            fetchPolicy: "no-cache",
+        });
+        this.setState({devicesChips: data.devices})
+    }
+
+    _getDevicesCityChips = async () => {
+        const {data} = await this.props.client.query({
+            query: getAllDevices,
+            variables: {
+              where:{
+                  devices_type:{
+                      device_type_name: {_in: ["city tag"] }
+                  }
+              }
+            },
+            fetchPolicy: "no-cache",
+        });
+        this.setState({devicesCityChips: data.devices})
+    }
+
+    _getLicenses = async () => {
+        const {data} = await this.props.client.query({
+            query: getAllLicenses,
+            variables:{
+                orderType: "desc",
+                where: {}
+            },
+            fetchPolicy: "no-cache",
+        });
+        this.setState({licenses: data.city_licenses})
+    }
+
+    save = async () => {
+        const {data: dataJobTypes} = await this.props.client.query({query: getJobTypes});
+        const parameter = dataJobTypes.syn_did_job_types.find((item) => item.job_type_name === 'Sync DID (pet and device)');
+
+        const {data: dataParameters} = await this.props.client.query({query: getParameters});
+        const petParameter = dataParameters.syn_did_parameters.find((item) => item.did_parameter_name === "pet_uid")
+        const deviceParameter = dataParameters.syn_did_parameters.find((item) => item.did_parameter_name === "device_uid")
+        const cityChipParameter = dataParameters.syn_did_parameters.find((item) => item.did_parameter_name === "city_chip_uid")
+        const cityLicenseParameter = dataParameters.syn_did_parameters.find((item) => item.did_parameter_name === "city_license_uid")
+
+        let itemToSave = {
+            installer_person_uid: this.props.vet.person_uid,
+            pet_uid: this.state.pet_index[0],
+            device_uid: this.state.device_index[0],
+            from_time: new Date()
+        }
+        await this.props.client.mutate({
+            mutation: addPetDevice,
+            variables: {pet_device: itemToSave},
+            fetchPolicy: "no-cache",
+        });
+
+
+
+        itemToSave = {
+            job_uid: uuidv4(),
+            job_type_id: parameter.job_type_id,
+            person_uid: this.props.vet.person_uid,
+            status: 0
+        }
+
+        const response = await this.props.client.mutate({
+            mutation: addJob,
+            variables: {job: itemToSave},
+            fetchPolicy: "no-cache",
+        });
+
+        if(response.data && response.data.insert_syn_did_jobs &&
+            response.data.insert_syn_did_jobs.returning.length >0 && response.data.insert_syn_did_jobs.returning[0].job_uid){
+            let itemToSave = [
+                {
+                    job_uid: response.data.insert_syn_did_jobs.returning[0].job_uid,
+                    did_parameter_uid: petParameter.did_parameter_uid,
+                    did_parameter_value: this.state.pet_index[0]
+                }
+            ];
+            await this.props.client.mutate({
+                mutation: addJobParams,
+                variables: {jobParams: itemToSave},
+                fetchPolicy: "no-cache",
+            });
+
+            itemToSave = [
+                {
+                    job_uid: response.data.insert_syn_did_jobs.returning[0].job_uid,
+                    did_parameter_uid: deviceParameter.did_parameter_uid,
+                    did_parameter_value: this.state.device_index[0]
+                }
+            ];
+
+            await this.props.client.mutate({
+                mutation: addJobParams,
+                variables: {jobParams: itemToSave},
+                fetchPolicy: "no-cache",
+            });
+
+            itemToSave = [
+                {
+                    job_uid: response.data.insert_syn_did_jobs.returning[0].job_uid,
+                    did_parameter_uid: cityChipParameter.did_parameter_uid,
+                    did_parameter_value: this.state.device_city_index[0]
+                }
+            ];
+
+            await this.props.client.mutate({
+                mutation: addJobParams,
+                variables: {jobParams: itemToSave},
+                fetchPolicy: "no-cache",
+            });
+
+            itemToSave = [
+                {
+                    job_uid: response.data.insert_syn_did_jobs.returning[0].job_uid,
+                    did_parameter_uid: cityLicenseParameter.did_parameter_uid,
+                    did_parameter_value: this.state.city_license_index[0]
+                }
+            ];
+
+            await this.props.client.mutate({
+                mutation: addJobParams,
+                variables: {jobParams: itemToSave},
+                fetchPolicy: "no-cache",
+            });
+
+            Toast.show({text: "Digital Identity is in pending.", type:"warning", duration: 2000})
+        }
+    }
+
+    render() {
+        const {devicesChips, devicesCityChips, pets, ...rest} = this.state;
+        return (
+            <Container>
+                <SynHeader title="Digital Identity" navigation={this.props.navigation} />
+
+                <ScrollView >
+                <Form>
+                    <Item>
+                        <Label>Pet      </Label>
+                        <View style={{flex: 1}}>
+                            <MultiSelect
+                                hideTags
+                                single
+                                canAddItems={true}
+                                onAddItem={()=> this.props.navigation.navigate("Add Pet", {from: "digitalIdentity"})}
+                                items={this.state.pets}
+                                uniqueKey="pet_uid"
+                                onSelectedItemsChange={(selected) => {
+                                    this.setState({...this.state, pet_index: selected})
+                                }}
+                                selectedItems={this.state.pet_index}
+                                selectText=" "
+                                searchInputPlaceholderText="Search Pet..."
+                                displayKey="pet_name"
+                                submitButtonText="Close"
+                            />
+                        </View>
+                    </Item>
+                    <Item style={{marginTop:10}}>
+                        <Label>Chip</Label>
+                        <View style={{flex: 1}}>
+                            <MultiSelect
+                                hideTags
+                                single
+                                canAddItems={true}
+                                onAddItem={()=> this.props.navigation.navigate("Add Chip", {from: "digitalIdentity"})}
+                                items={this.state.devicesChips}
+                                uniqueKey="device_uid"
+                                onSelectedItemsChange={(selected) => {
+                                    this.setState({...this.state, device_index: selected})
+                                }}
+                                selectedItems={this.state.device_index}
+                                selectText=" "
+                                searchInputPlaceholderText="Search Chip Device..."
+                                displayKey="device_name"
+                                submitButtonText="Close"
+                            />
+                        </View>
+                    </Item>
+                    <Item style={{marginTop:10}}>
+                        <Label> City Tag</Label>
+                        <View style={{flex: 1}}>
+                            <MultiSelect
+                                hideTags
+                                single
+                                canAddItems={true}
+                                onAddItem={()=> this.props.navigation.navigate("Add Chip", {from: "digitalIdentity"})}
+                                items={this.state.devicesCityChips}
+                                uniqueKey="device_uid"
+                                onSelectedItemsChange={(selected) => {
+                                    this.setState({...this.state, device_city_index: selected})
+                                }}
+                                selectedItems={this.state.device_city_index}
+                                selectText=" "
+                                searchInputPlaceholderText="Search City Tag Device..."
+                                displayKey="device_name"
+                                submitButtonText="Close"
+                            />
+                        </View>
+                    </Item>
+                    <Item style={{marginTop:10}}>
+                        <Label> City License</Label>
+                        <View style={{flex: 1}}>
+                            <MultiSelect
+                                hideTags
+                                single
+                                canAddItems={true}
+                                onAddItem={()=> this.props.navigation.navigate("Add License", {from: "digitalIdentity"})}
+                                items={this.state.licenses}
+                                uniqueKey="city_license_uid"
+                                onSelectedItemsChange={(selected) => {
+                                    this.setState({...this.state, city_license_index: selected})
+                                }}
+                                selectedItems={this.state.city_license_index}
+                                selectText=" "
+                                searchInputPlaceholderText="Search City License..."
+                                displayKey="license_id"
+                                submitButtonText="Close"
+                            />
+                        </View>
+                    </Item>
+                    <Button block success style={{margin: 15}} onPress={this.save}>
+                        <Text>
+                            Create
+                        </Text>
+                    </Button>
+                </Form>
+                </ScrollView>
+            </Container>
+        )
+    }
+}
+
+const styles = StyleSheet.create({
+
+});
+
+
+const apolloAddDigitalIdentityScreen = withApollo(AddDigitalIdentityScreen);
+export default apolloAddDigitalIdentityScreen;
