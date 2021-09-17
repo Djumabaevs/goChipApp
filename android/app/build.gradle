@@ -191,12 +191,12 @@ dependencies {
 
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
 
-    implementation project(':react-native-fingerprint-scanner')
+    // implementation project(':react-native-fingerprint-scanner')
 
-    implementation "com.google.android.gms:play-services-base:16.0.1"
-    implementation "com.google.android.gms:play-services-location:16.0.0"
+    // implementation "com.google.android.gms:play-services-base:16.0.1"
+    // implementation "com.google.android.gms:play-services-location:16.0.0"
 
-    implementation project(':react-native-splash-screen')
+    // implementation project(':react-native-splash-screen')
 
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}") {
       exclude group:'com.facebook.fbjni'
