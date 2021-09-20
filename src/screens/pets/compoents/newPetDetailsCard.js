@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { StyleSheet, View, Text, Image } from "react-native";
+import { StyleSheet, View, Text, Image, Button } from "react-native";
 import MaterialCommunityIconsIcon from "react-native-vector-icons/MaterialCommunityIcons";
 import MaterialIconsIcon from "react-native-vector-icons/MaterialIcons";
 
@@ -10,6 +10,7 @@ function details(props) {
       <View style={styles.rect}>
         <Text style={styles.loremIpsum}>GoChip Digital Identity</Text>
         <View style={styles.imageRow}>
+        <Button title="Details" />
           <Image
             source={require("../assets/images/sensor.png")}
             resizeMode="contain"
