@@ -4,7 +4,7 @@ import MaterialCommunityIconsIcon from "react-native-vector-icons/MaterialCommun
 import MaterialIconsIcon from "react-native-vector-icons/MaterialIcons";
 
 
-function styles(props) {
+function details(props) {
   return (
     <View style={styles.container}>
       <View style={styles.rect}>
@@ -99,4 +99,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default styles;
+export default details;
