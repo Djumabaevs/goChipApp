@@ -101,3 +101,15 @@ const styles = StyleSheet.create({
 });
 
 export default details;
+
+
+
+
+
+
+
+<Text style={styles.cust}>Hello, I am {pet.pet_name} a {pet.pets_type.pet_type_name}!</Text>
+         
+             
+<PetDevicesList petDevices={pet.pets_devices} city_licenses={pet.city_licenses}/>
+{props.children}
