@@ -52,6 +52,8 @@ const PetDetailsContainer = (props) => {
               <Text style={styles.centered}> Weight: {pet.cats[0].weight} kg</Text>
             </>
             }
+
+            
             <PetDevicesList petDevices={pet.pets_devices} city_licenses={pet.city_licenses}/>
             {props.children}
           </Content>
