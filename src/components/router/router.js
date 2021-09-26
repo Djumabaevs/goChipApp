@@ -161,6 +161,16 @@ const SynRouter = (props) => {
                         />
                     </ApolloProvider>
             },
+            "PetDetailsChart": {
+                screen: screenProps => 
+                <ApolloProvider client={ client }>
+                    <PetDetailsChartScreen
+                     {...screenProps}
+                     {...props}
+                     vet={vet}
+                     />
+                </ApolloProvider>
+            },
             "Add Person": {
                 screen: screenProps =>
                     <ApolloProvider client={ client }>
