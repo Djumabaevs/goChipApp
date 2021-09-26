@@ -171,6 +171,16 @@ const SynRouter = (props) => {
                      />
                 </ApolloProvider>
             },
+            "License": {
+                screen: screenProps => 
+                <ApolloProvider client={ client }>
+                    <LicensesScreen
+                     {...screenProps}
+                     {...props}
+                     vet={vet}
+                     />
+                </ApolloProvider>
+            },
             "Add Person": {
                 screen: screenProps =>
                     <ApolloProvider client={ client }>
