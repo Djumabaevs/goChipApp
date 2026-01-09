@@ -1,1 +1,1 @@
-startup Australia new project
+startup new project
